@@ -19,12 +19,20 @@ export default function Home() {
             <p className="font-bold text-green-400 text-xs tracking-widest uppercase">Archery Park</p>
           </div>
         </div>
-        <Link
-          href="/trainer"
-          className="text-xs text-white/60 hover:text-white border border-white/20 hover:border-white/50 rounded-lg px-4 py-2 transition-all"
-        >
-          Staff Login
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="text-xs text-white/60 hover:text-white transition-colors"
+          >
+            Member Login
+          </Link>
+          <Link
+            href="/trainer"
+            className="text-xs text-white/60 hover:text-white border border-white/20 hover:border-white/50 rounded-lg px-4 py-2 transition-all"
+          >
+            Staff Login
+          </Link>
+        </div>
       </header>
 
       {/* ── Hero ── */}
