@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Logo } from '@/app/components/Logo';
 import QRCode from 'react-qr-code';
 import type { Membership, PunchPass } from '@/data/memberTypes';
 import { MEMBERSHIP_LABELS, TIER_LABELS } from '@/data/memberTypes';
@@ -78,10 +79,7 @@ export default function MemberDashboard() {
     <div className="min-h-screen bg-[#0d0d0d] text-white">
       {/* Header */}
       <header className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl">🏹</span>
-          <span className="font-bold text-white text-sm">WCAP</span>
-        </Link>
+        <Logo size={42} />
         <div className="flex items-center gap-4">
           <Link href="/member/passes" className="text-xs text-white/50 hover:text-white">Passes</Link>
           <Link href="/member/family" className="text-xs text-white/50 hover:text-white">Family</Link>

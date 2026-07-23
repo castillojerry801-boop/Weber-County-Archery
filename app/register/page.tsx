@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Logo } from '@/app/components/Logo';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -50,13 +51,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 justify-center">
-            <span className="text-3xl">🏹</span>
-            <div className="text-left">
-              <p className="font-black text-white text-sm uppercase tracking-wide">Weber County</p>
-              <p className="font-bold text-green-400 text-xs uppercase tracking-widest">Archery Park</p>
-            </div>
-          </Link>
+          <Logo size={60} />
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8">

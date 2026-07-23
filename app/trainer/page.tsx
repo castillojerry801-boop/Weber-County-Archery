@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Logo } from '@/app/components/Logo';
 import { schedulerConfig } from '@/data/schedulerConfig';
 import type { Booking, Provider } from '@/data/schedulerTypes';
 import { AdminBookingCard } from '@/app/components/scheduler/AdminBookingCard';
@@ -124,6 +125,9 @@ export default function TrainerPage() {
       <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-sm">
           <div className="text-center mb-6">
+            <div className="bg-[#111] rounded-xl p-2 inline-block mb-3">
+              <Logo size={60} showText={false} href="" />
+            </div>
             <h1 className="text-xl font-bold text-gray-900">Trainer Login</h1>
             <p className="text-sm text-gray-400 mt-1">Weber County Archery Park</p>
           </div>

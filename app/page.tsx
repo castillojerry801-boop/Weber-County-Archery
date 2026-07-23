@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { Logo } from '@/app/components/Logo';
 
 export const metadata: Metadata = {
   title: 'Weber County Archery Park',
@@ -12,13 +13,7 @@ export default function Home() {
 
       {/* ── Nav ── */}
       <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">🏹</span>
-          <div className="leading-tight">
-            <p className="font-black text-white text-sm tracking-wide uppercase">Weber County</p>
-            <p className="font-bold text-green-400 text-xs tracking-widest uppercase">Archery Park</p>
-          </div>
-        </div>
+        <Logo size={52} />
         <div className="flex items-center gap-3">
           <Link
             href="/login"
