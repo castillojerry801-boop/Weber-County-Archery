@@ -18,7 +18,6 @@ export async function POST(
   const headerList = await headers();
   const ip = headerList.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
-  // Rate limit kiosk: 60 scans per minute per IP (generous for a real scanner)
   const rl = checkRateLimit(`scan:${ip}`, 60, 60 * 1000);
   if (!rl.allowed) {
     return Response.json({ result: 'red', title: 'Slow Down', message: 'Too many scans. Wait a moment.' });
@@ -31,12 +30,12 @@ export async function POST(
   }
   const memberId = parsed.data;
 
-  const user = userStore.findByMemberId(memberId);
+  const user = await userStore.findByMemberId(memberId);
   if (!user) {
     return Response.json({ result: 'red' as ScanResult, title: 'Not Found', message: 'Member ID not recognized.', name: null });
   }
 
-  const membership = membershipStore.findActiveForMember(user.id, user.email);
+  const membership = await membershipStore.findActiveForMember(user.id, user.email);
   if (membership) {
     const days = daysUntil(membership.endDate);
     const result: ScanResult = days <= 7 ? 'yellow' : 'green';
@@ -44,7 +43,7 @@ export async function POST(
       : membership.type === 'annual' ? 'Annual Pass'
       : 'Household Annual Pass';
 
-    checkInStore.add({
+    await checkInStore.add({
       id: crypto.randomUUID(),
       memberId,
       userId: user.id,
@@ -65,12 +64,12 @@ export async function POST(
     });
   }
 
-  const punch = punchStore.findActiveByUserId(user.id);
+  const punch = await punchStore.findActiveByUserId(user.id);
   if (punch && punch.punchesRemaining > 0) {
-    const remaining = punchStore.deduct(punch.id);
+    const remaining = await punchStore.deduct(punch.id);
     const result: ScanResult = remaining <= 2 ? 'yellow' : 'green';
 
-    checkInStore.add({
+    await checkInStore.add({
       id: crypto.randomUUID(),
       memberId,
       userId: user.id,
@@ -92,7 +91,7 @@ export async function POST(
     });
   }
 
-  checkInStore.add({
+  await checkInStore.add({
     id: crypto.randomUUID(),
     memberId,
     userId: user.id,
@@ -116,11 +115,13 @@ export async function GET(
   { params }: { params: Promise<{ memberId: string }> },
 ) {
   const { memberId } = await params;
-  const user = userStore.findByMemberId(memberId);
+  const user = await userStore.findByMemberId(memberId);
   if (!user) return Response.json({ valid: false });
 
-  const membership = membershipStore.findActiveForMember(user.id, user.email);
-  const punch = punchStore.findActiveByUserId(user.id);
+  const [membership, punch] = await Promise.all([
+    membershipStore.findActiveForMember(user.id, user.email),
+    punchStore.findActiveByUserId(user.id),
+  ]);
 
   return Response.json({
     valid: !!(membership || (punch && punch.punchesRemaining > 0)),

@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const providerId = searchParams.get('providerId') ?? undefined;
   const date = searchParams.get('date') ?? undefined;
-  return Response.json(bookingStore.getFiltered(providerId, date));
+  return Response.json(await bookingStore.getFiltered(providerId, date));
 }
 
 export async function POST(request: NextRequest) {
@@ -28,10 +28,10 @@ export async function POST(request: NextRequest) {
     createdAt: new Date().toISOString(),
   };
 
-  bookingStore.add(booking);
+  await bookingStore.add(booking);
 
-  // TODO: Send confirmation email to customer and admin notification
-  // TODO: Integrate Square payment when requirePayment is true
+  // TODO: Send confirmation email
+  // TODO: Integrate Square payment
 
   return Response.json(booking, { status: 201 });
 }

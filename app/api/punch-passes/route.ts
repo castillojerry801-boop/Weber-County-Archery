@@ -8,7 +8,7 @@ export async function GET() {
   const userId = cookieStore.get('member_session')?.value;
   if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  return Response.json(punchStore.findByUserId(userId));
+  return Response.json(await punchStore.findByUserId(userId));
 }
 
 export async function POST(request: NextRequest) {
@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
   }
 
   // TODO: Charge Square before creating punch pass
-  // const payment = await squareClient.paymentsApi.createPayment(...)
 
   const pass: PunchPass = {
     id: crypto.randomUUID(),
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
     purchasedAt: new Date().toISOString(),
   };
 
-  punchStore.add(pass);
+  await punchStore.add(pass);
 
   return Response.json(pass, { status: 201 });
 }

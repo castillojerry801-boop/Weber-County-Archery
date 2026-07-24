@@ -14,7 +14,7 @@ export async function GET() {
   const userId = cookieStore.get('member_session')?.value;
   if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  return Response.json(membershipStore.findByUserId(userId));
+  return Response.json(await membershipStore.findByUserId(userId));
 }
 
 export async function POST(request: NextRequest) {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   const userId = cookieStore.get('member_session')?.value;
   if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const user = userStore.findById(userId);
+  const user = await userStore.findById(userId);
   if (!user) return Response.json({ error: 'User not found' }, { status: 404 });
 
   const { type, tier, householdEmails = [] } = await request.json() as {
@@ -32,12 +32,9 @@ export async function POST(request: NextRequest) {
   };
 
   const today = new Date();
-  const endDate = type === 'monthly'
-    ? addMonths(today, 1)
-    : addMonths(today, 12);
+  const endDate = type === 'monthly' ? addMonths(today, 1) : addMonths(today, 12);
 
   // TODO: Charge Square before creating membership
-  // const payment = await squareClient.paymentsApi.createPayment(...)
 
   const membership: Membership = {
     id: crypto.randomUUID(),
@@ -52,7 +49,7 @@ export async function POST(request: NextRequest) {
     createdAt: today.toISOString(),
   };
 
-  membershipStore.add(membership);
+  await membershipStore.add(membership);
 
   return Response.json(membership, { status: 201 });
 }

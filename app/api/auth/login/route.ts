@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
   const headerList = await headers();
   const ip = headerList.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
-  // Rate limit: 10 attempts per IP per 15 minutes
   const rlIp = checkRateLimit(`login:ip:${ip}`, 10, 15 * 60 * 1000);
   if (!rlIp.allowed) {
     return Response.json(
@@ -34,13 +33,11 @@ export async function POST(request: NextRequest) {
 
   const { email, password, turnstile } = parsed.data;
 
-  // Verify Turnstile
   const valid = await verifyTurnstile(turnstile, ip);
   if (!valid) {
     return Response.json({ error: 'Bot check failed. Please try again.' }, { status: 403 });
   }
 
-  // Per-email rate limit: 5 failed attempts per 15 minutes
   const rlEmail = checkRateLimit(`login:email:${email}`, 5, 15 * 60 * 1000);
   if (!rlEmail.allowed) {
     return Response.json(
@@ -49,9 +46,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const user = userStore.findByEmail(email);
+  const user = await userStore.findByEmail(email);
 
-  // Use bcrypt.compare even when user not found to prevent timing attacks
+  // Always run bcrypt to prevent timing attacks
   const dummyHash = '$2b$12$invalidhashfortimingprotectiononly000000000000000000000';
   const passwordMatch = await bcrypt.compare(password, user?.passwordHash ?? dummyHash);
 

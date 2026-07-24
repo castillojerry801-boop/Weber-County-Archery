@@ -6,13 +6,15 @@ export async function GET() {
   const userId = cookieStore.get('member_session')?.value;
   if (!userId) return Response.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const user = userStore.findById(userId);
+  const user = await userStore.findById(userId);
   if (!user) return Response.json({ error: 'User not found' }, { status: 404 });
 
-  const activeMembership = membershipStore.findActiveByUserId(userId);
-  const activePunchPass = punchStore.findActiveByUserId(userId);
-  const allMemberships = membershipStore.findByUserId(userId);
-  const allPunchPasses = punchStore.findByUserId(userId);
+  const [activeMembership, activePunchPass, allMemberships, allPunchPasses] = await Promise.all([
+    membershipStore.findActiveByUserId(userId),
+    punchStore.findActiveByUserId(userId),
+    membershipStore.findByUserId(userId),
+    punchStore.findByUserId(userId),
+  ]);
 
   return Response.json({
     id: user.id,

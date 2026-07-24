@@ -7,6 +7,6 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
-  membershipStore.update(id, body);
+  await membershipStore.update(id, body);
   return Response.json({ ok: true });
 }

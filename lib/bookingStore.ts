@@ -1,40 +1,72 @@
-// TODO: Replace with a real database (Postgres via Vercel Marketplace or Supabase)
-// Module-level store resets on server restart — dev/demo only
+import { db } from '@/lib/supabase';
 import type { Booking } from '@/data/schedulerTypes';
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __bookingStore: Booking[] | undefined;
-}
+type BookingRow = {
+  id: string; service_id: string; service_name: string;
+  provider_id: string; provider_name: string; date: string; time: string;
+  customer_name: string; customer_email: string; customer_phone: string;
+  notes: string; status: string; created_at: string;
+};
 
-if (!global.__bookingStore) {
-  global.__bookingStore = [];
+function toBooking(r: BookingRow): Booking {
+  return {
+    id: r.id, serviceId: r.service_id, serviceName: r.service_name,
+    providerId: r.provider_id, providerName: r.provider_name,
+    date: r.date, time: r.time, customerName: r.customer_name,
+    customerEmail: r.customer_email, customerPhone: r.customer_phone,
+    notes: r.notes, status: r.status as Booking['status'], createdAt: r.created_at,
+  };
+}
+function bookingToRow(updates: Partial<Booking>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (updates.status !== undefined)        row.status = updates.status;
+  if (updates.notes !== undefined)         row.notes = updates.notes;
+  if (updates.customerName !== undefined)  row.customer_name = updates.customerName;
+  if (updates.customerEmail !== undefined) row.customer_email = updates.customerEmail;
+  if (updates.customerPhone !== undefined) row.customer_phone = updates.customerPhone;
+  if (updates.date !== undefined)          row.date = updates.date;
+  if (updates.time !== undefined)          row.time = updates.time;
+  return row;
 }
 
 export const bookingStore = {
-  getAll(): Booking[] {
-    return global.__bookingStore!;
+  async getAll(): Promise<Booking[]> {
+    const { data } = await db.from('bookings').select()
+      .order('date').order('time');
+    return (data ?? []).map((r) => toBooking(r as BookingRow));
   },
 
-  getById(id: string): Booking | undefined {
-    return global.__bookingStore!.find((b) => b.id === id);
+  async getById(id: string): Promise<Booking | null> {
+    const { data } = await db.from('bookings').select()
+      .eq('id', id).maybeSingle();
+    return data ? toBooking(data as BookingRow) : null;
   },
 
-  getFiltered(providerId?: string, date?: string): Booking[] {
-    let list = global.__bookingStore!;
-    if (providerId) list = list.filter((b) => b.providerId === providerId);
-    if (date) list = list.filter((b) => b.date === date);
-    return list;
+  async getFiltered(providerId?: string, date?: string): Promise<Booking[]> {
+    let q = db.from('bookings').select().order('date').order('time');
+    if (providerId) q = q.eq('provider_id', providerId);
+    if (date)       q = q.eq('date', date);
+    const { data } = await q;
+    return (data ?? []).map((r) => toBooking(r as BookingRow));
   },
 
-  add(booking: Booking): void {
-    global.__bookingStore!.push(booking);
+  async add(booking: Booking): Promise<void> {
+    const { error } = await db.from('bookings').insert({
+      id: booking.id, service_id: booking.serviceId, service_name: booking.serviceName,
+      provider_id: booking.providerId, provider_name: booking.providerName,
+      date: booking.date, time: booking.time, customer_name: booking.customerName,
+      customer_email: booking.customerEmail, customer_phone: booking.customerPhone,
+      notes: booking.notes, status: booking.status, created_at: booking.createdAt,
+    });
+    if (error) throw error;
   },
 
-  update(id: string, updates: Partial<Booking>): Booking | null {
-    const idx = global.__bookingStore!.findIndex((b) => b.id === id);
-    if (idx === -1) return null;
-    global.__bookingStore![idx] = { ...global.__bookingStore![idx], ...updates };
-    return global.__bookingStore![idx];
+  async update(id: string, updates: Partial<Booking>): Promise<Booking | null> {
+    const row = bookingToRow(updates);
+    if (Object.keys(row).length === 0) return this.getById(id);
+    const { data, error } = await db.from('bookings').update(row)
+      .eq('id', id).select().maybeSingle();
+    if (error) throw error;
+    return data ? toBooking(data as BookingRow) : null;
   },
 };
