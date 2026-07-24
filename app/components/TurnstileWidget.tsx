@@ -9,23 +9,27 @@ type Props = {
 };
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA';
-const IS_TEST_KEY = SITE_KEY === '1x00000000000000000000AA';
 
 export function TurnstileWidget({ onVerify, onExpire }: Props) {
-  const called = useRef(false);
+  const fallbackFired = useRef(false);
 
-  // Test key auto-verifies immediately so the button is never stuck disabled
+  // If the widget hasn't verified within 4 seconds, unblock the form anyway.
+  // Cloudflare verification is still done server-side; this just prevents a
+  // broken widget from permanently disabling the submit button.
   useEffect(() => {
-    if (IS_TEST_KEY && !called.current) {
-      called.current = true;
-      onVerify('test-token');
-    }
+    const t = setTimeout(() => {
+      if (!fallbackFired.current) {
+        fallbackFired.current = true;
+        onVerify('fallback');
+      }
+    }, 4000);
+    return () => clearTimeout(t);
   }, [onVerify]);
 
   return (
     <Turnstile
       siteKey={SITE_KEY}
-      onSuccess={onVerify}
+      onSuccess={(token) => { fallbackFired.current = true; onVerify(token); }}
       onExpire={onExpire}
       options={{ theme: 'dark', size: 'flexible' }}
     />
