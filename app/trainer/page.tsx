@@ -153,6 +153,16 @@ export default function TrainerPage() {
               Sign In
             </button>
           </form>
+
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <a
+              href="/kiosk"
+              className="flex items-center justify-center gap-2 w-full bg-gray-900 hover:bg-black text-white font-semibold rounded-lg px-4 py-3 min-h-[44px] transition-colors"
+            >
+              <span>Open Check-In Kiosk</span>
+            </a>
+            <p className="text-xs text-center text-gray-400 mt-2">For front desk scanner use</p>
+          </div>
         </div>
       </main>
     );
