@@ -227,7 +227,7 @@ export default function Home() {
             <a href="https://www.wcparksrec.com/wcarchery" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors">
               Official Site
             </a>
-            <Link href="/trainer" className="hover:text-white/60 transition-colors">
+            <Link href="/staff" className="hover:text-white/60 transition-colors">
               Staff Login
             </Link>
           </div>
