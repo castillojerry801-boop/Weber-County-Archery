@@ -1,5 +1,5 @@
 import { db } from '@/lib/supabase';
-import type { User, Membership, PunchPass, CheckInLog } from '@/data/memberTypes';
+import type { User, Membership, PunchPass, CheckInLog, DayPass } from '@/data/memberTypes';
 
 // --- DB row types (snake_case from Postgres) ---
 type MemberRow = {
@@ -177,6 +177,24 @@ export const punchStore = {
       .update({ punches_remaining: newRemaining, status: newRemaining === 0 ? 'depleted' : 'active' })
       .eq('id', id).select('punches_remaining').single();
     return (updated as { punches_remaining: number } | null)?.punches_remaining ?? newRemaining;
+  },
+};
+
+export const dayPassStore = {
+  async add(p: DayPass): Promise<void> {
+    const { error } = await db.from('day_passes').insert({
+      id: p.id, guest_name: p.guestName, payment_method: p.paymentMethod,
+      amount: p.amount, created_at: p.createdAt,
+    });
+    if (error) throw error;
+  },
+
+  async todayCount(): Promise<number> {
+    const today = new Date().toISOString().split('T')[0];
+    const { count } = await db.from('day_passes')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', `${today}T00:00:00.000Z`);
+    return count ?? 0;
   },
 };
 

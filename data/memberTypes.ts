@@ -65,6 +65,16 @@ export const PUNCH_PASS_PRICES: Record<10 | 20 | 30, number> = {
   30: 110,
 };
 
+export const DAY_PASS_PRICE = 6;
+
+export type DayPass = {
+  id: string;
+  guestName: string;
+  paymentMethod: string;
+  amount: number;
+  createdAt: string;
+};
+
 export const MEMBERSHIP_LABELS: Record<MembershipType, string> = {
   monthly: 'Monthly Pass',
   annual: 'Annual Pass',

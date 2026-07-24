@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
   MEMBERSHIP_PRICES, PUNCH_PASS_PRICES,
-  MEMBERSHIP_LABELS, TIER_LABELS,
+  MEMBERSHIP_LABELS, TIER_LABELS, DAY_PASS_PRICE,
 } from '@/data/memberTypes';
 import type { MembershipType, MemberTier } from '@/data/memberTypes';
 
@@ -473,6 +473,122 @@ function RegisterPanel() {
   );
 }
 
+// ── Day Pass widget ──────────────────────────────────────────────────────────
+
+function DayPassWidget() {
+  const [open, setOpen] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'square'>('cash');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleCharge() {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/staff/day-pass', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guestName, paymentMethod }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? 'Something went wrong.');
+        return;
+      }
+      setSuccess(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function reset() {
+    setSuccess(false);
+    setOpen(false);
+    setGuestName('');
+    setPaymentMethod('cash');
+    setError('');
+  }
+
+  if (success) {
+    return (
+      <div className="bg-green-500/15 border border-green-500/40 rounded-2xl p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-black font-black text-lg shrink-0">✓</div>
+          <div>
+            <p className="text-green-300 font-bold">Day Pass Sold — ${DAY_PASS_PRICE}</p>
+            <p className="text-white/40 text-xs">{guestName || 'Walk-in guest'} · {paymentMethod === 'cash' ? 'Cash' : 'Square'}</p>
+          </div>
+        </div>
+        <button onClick={reset} className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-semibold rounded-xl py-2.5 transition-colors">
+          Sell Another Day Pass
+        </button>
+      </div>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-4 transition-colors group"
+      >
+        <div className="text-left">
+          <p className="text-white font-bold text-lg">Day Pass</p>
+          <p className="text-white/40 text-xs">Walk-in · No account needed</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-green-400 font-black text-2xl">${DAY_PASS_PRICE}</span>
+          <span className="text-white/30 group-hover:text-white/60 text-sm transition-colors">Tap →</span>
+        </div>
+      </button>
+    );
+  }
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-white font-bold text-lg">Day Pass</p>
+          <p className="text-white/40 text-xs">Walk-in · No account needed</p>
+        </div>
+        <button onClick={() => setOpen(false)} className="text-white/30 hover:text-white text-sm transition-colors">Cancel</button>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-white/50 mb-1">Guest Name <span className="text-white/25">(optional)</span></label>
+        <input
+          type="text"
+          value={guestName}
+          onChange={(e) => setGuestName(e.target.value)}
+          placeholder="Frank Johnson"
+          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[48px]"
+        />
+      </div>
+
+      <div className="flex gap-2">
+        {(['cash', 'square'] as const).map((method) => (
+          <button key={method} type="button" onClick={() => setPaymentMethod(method)}
+            className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${paymentMethod === method ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-white/10 text-white/40 hover:border-white/20'}`}>
+            {method === 'cash' ? 'Cash' : 'Square Terminal'}
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+
+      <button
+        onClick={handleCharge}
+        disabled={loading}
+        className="w-full bg-green-500 hover:bg-green-400 disabled:bg-green-900 text-black font-black rounded-xl py-4 text-lg min-h-[56px] transition-colors"
+      >
+        {loading ? 'Processing…' : `Collect $${DAY_PASS_PRICE} · Day Pass`}
+      </button>
+    </div>
+  );
+}
+
 // ── Page shell ───────────────────────────────────────────────────────────────
 
 export default function SquarePage() {
@@ -490,8 +606,20 @@ export default function SquarePage() {
         </Link>
       </header>
 
-      {/* Mode switcher */}
+      {/* Day pass quick-sale */}
       <div className="max-w-lg mx-auto px-4 pt-6">
+        <DayPassWidget />
+      </div>
+
+      {/* Divider */}
+      <div className="max-w-lg mx-auto px-4 pt-5 flex items-center gap-3">
+        <div className="flex-1 h-px bg-white/10" />
+        <span className="text-white/20 text-xs uppercase tracking-widest">Member Sales</span>
+        <div className="flex-1 h-px bg-white/10" />
+      </div>
+
+      {/* Mode switcher */}
+      <div className="max-w-lg mx-auto px-4 pt-4">
         <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1">
           <button
             onClick={() => setMode('sell')}
