@@ -60,8 +60,15 @@ export default function StaffPage() {
       <CheckInFeed />
 
       <Link
-        href="/admin"
+        href="/staff/qr"
         className="text-white/20 hover:text-white/40 text-xs mt-10 transition-colors"
+      >
+        Pedestal QR Codes
+      </Link>
+
+      <Link
+        href="/admin"
+        className="text-white/20 hover:text-white/40 text-xs mt-2 transition-colors"
       >
         Admin Panel
       </Link>
