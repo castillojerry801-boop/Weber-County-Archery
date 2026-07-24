@@ -589,6 +589,142 @@ function DayPassWidget() {
   );
 }
 
+// ── Custom Charge widget ─────────────────────────────────────────────────────
+
+function CustomChargeWidget() {
+  const [open, setOpen] = useState(false);
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'square'>('cash');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<{ description: string; amount: string } | null>(null);
+  const [error, setError] = useState('');
+
+  const parsed = parseFloat(amount);
+  const valid = !isNaN(parsed) && parsed > 0;
+
+  async function handleCharge() {
+    if (!valid) return;
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/staff/custom-charge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: description.trim(), amount: parsed, paymentMethod }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? 'Something went wrong.');
+        return;
+      }
+      setSuccess({ description: description.trim() || 'Custom charge', amount: parsed.toFixed(2) });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function reset() {
+    setSuccess(null);
+    setOpen(false);
+    setDescription('');
+    setAmount('');
+    setPaymentMethod('cash');
+    setError('');
+  }
+
+  if (success) {
+    return (
+      <div className="bg-green-500/15 border border-green-500/40 rounded-2xl p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-black font-black text-lg shrink-0">✓</div>
+          <div>
+            <p className="text-green-300 font-bold">${success.amount} Charged</p>
+            <p className="text-white/40 text-xs">{success.description} · {paymentMethod === 'cash' ? 'Cash' : 'Square'}</p>
+          </div>
+        </div>
+        <button onClick={reset} className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-semibold rounded-xl py-2.5 transition-colors">
+          New Charge
+        </button>
+      </div>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-4 transition-colors group"
+      >
+        <div className="text-left">
+          <p className="text-white font-bold text-lg">Custom Charge</p>
+          <p className="text-white/40 text-xs">Arrows, rentals, equipment, etc.</p>
+        </div>
+        <span className="text-white/30 group-hover:text-white/60 text-sm transition-colors">Tap →</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-white font-bold text-lg">Custom Charge</p>
+          <p className="text-white/40 text-xs">Arrows, rentals, equipment, etc.</p>
+        </div>
+        <button onClick={() => setOpen(false)} className="text-white/30 hover:text-white text-sm transition-colors">Cancel</button>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-white/50 mb-1">Description <span className="text-white/25">(optional)</span></label>
+        <input
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Arrow rental, loaner bow, etc."
+          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[48px]"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-white/50 mb-1">Amount</label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">$</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0.01"
+            step="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white placeholder-white/20 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[48px]"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        {(['cash', 'square'] as const).map((method) => (
+          <button key={method} type="button" onClick={() => setPaymentMethod(method)}
+            className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${paymentMethod === method ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-white/10 text-white/40 hover:border-white/20'}`}>
+            {method === 'cash' ? 'Cash' : 'Square Terminal'}
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+
+      <button
+        onClick={handleCharge}
+        disabled={!valid || loading}
+        className="w-full bg-green-500 hover:bg-green-400 disabled:bg-green-900 disabled:cursor-not-allowed text-black font-black rounded-xl py-4 text-lg min-h-[56px] transition-colors"
+      >
+        {loading ? 'Processing…' : valid ? `Collect $${parsed.toFixed(2)}` : 'Enter an amount'}
+      </button>
+    </div>
+  );
+}
+
 // ── Page shell ───────────────────────────────────────────────────────────────
 
 export default function SquarePage() {
@@ -606,9 +742,10 @@ export default function SquarePage() {
         </Link>
       </header>
 
-      {/* Day pass quick-sale */}
-      <div className="max-w-lg mx-auto px-4 pt-6">
+      {/* Quick-sale widgets */}
+      <div className="max-w-lg mx-auto px-4 pt-6 flex flex-col gap-3">
         <DayPassWidget />
+        <CustomChargeWidget />
       </div>
 
       {/* Divider */}
