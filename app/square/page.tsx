@@ -222,13 +222,38 @@ function SellPassPanel() {
 
 // ── Register Member panel ────────────────────────────────────────────────────
 
+type PassChoice = 'none' | 'membership' | 'punch';
+
 function RegisterPanel() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
+
+  // pass selection
+  const [passChoice, setPassChoice] = useState<PassChoice>('membership');
+  const [memberType, setMemberType] = useState<MembershipType>('annual');
+  const [tier, setTier] = useState<MemberTier>('adult');
+  const [punches, setPunches] = useState<10 | 20 | 30>(10);
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'square'>('cash');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [created, setCreated] = useState<{ name: string; email: string; memberId: string } | null>(null);
+  const [created, setCreated] = useState<{
+    name: string; email: string; memberId: string;
+    passLabel: string | null; price: number | null;
+  } | null>(null);
 
-  function field(id: keyof typeof form, label: string, type = 'text', placeholder = '') {
+  const passPrice =
+    passChoice === 'membership' ? MEMBERSHIP_PRICES[memberType][tier]
+    : passChoice === 'punch'    ? PUNCH_PASS_PRICES[punches]
+    : 0;
+
+  const passLabel =
+    passChoice === 'membership'
+      ? `${MEMBERSHIP_LABELS[memberType]} — ${TIER_LABELS[tier]}`
+      : passChoice === 'punch'
+      ? `${punches}-Visit Punch Pass`
+      : null;
+
+  function textField(id: keyof typeof form, label: string, type = 'text', placeholder = '') {
     return (
       <div key={id}>
         <label className="block text-xs font-medium text-white/50 mb-1">{label}</label>
@@ -244,39 +269,90 @@ function RegisterPanel() {
     );
   }
 
-  async function handleRegister(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('/api/staff/register', {
+      // Step 1: create account
+      const regRes = await fetch('/api/staff/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Something went wrong.'); return; }
-      setCreated({ name: data.name, email: data.email, memberId: data.memberId });
+      const regData = await regRes.json();
+      if (!regRes.ok) { setError(regData.error ?? 'Registration failed.'); return; }
+
+      // Step 2: add pass if one was chosen
+      if (passChoice !== 'none') {
+        const passBody = passChoice === 'membership'
+          ? { userId: regData.id, passKind: 'membership', type: memberType, tier, paymentMethod }
+          : { userId: regData.id, passKind: 'punch', punches, paymentMethod };
+
+        const passRes = await fetch('/api/staff/passes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(passBody),
+        });
+        if (!passRes.ok) {
+          const passData = await passRes.json();
+          // Account was created — warn but still show success for account
+          setError(`Account created, but pass failed: ${passData.error ?? 'Unknown error'}`);
+          setCreated({ name: regData.name, email: regData.email, memberId: regData.memberId, passLabel: null, price: null });
+          return;
+        }
+      }
+
+      setCreated({
+        name: regData.name,
+        email: regData.email,
+        memberId: regData.memberId,
+        passLabel: passChoice !== 'none' ? passLabel : null,
+        price: passChoice !== 'none' ? passPrice : null,
+      });
       setForm({ name: '', email: '', phone: '', password: '' });
     } finally {
       setLoading(false);
     }
   }
 
+  function reset() {
+    setCreated(null);
+    setError('');
+    setPassChoice('membership');
+    setMemberType('annual');
+    setTier('adult');
+    setPunches(10);
+    setPaymentMethod('cash');
+  }
+
   if (created) {
     return (
       <div className="flex flex-col gap-4">
         <div className="bg-green-500/15 border border-green-500/40 rounded-2xl p-6 text-center">
-          <p className="text-green-400 text-2xl font-black mb-1">Account Created!</p>
-          <p className="text-white font-semibold">{created.name}</p>
+          <p className="text-green-400 text-2xl font-black mb-1">Done!</p>
+          <p className="text-white font-semibold text-lg">{created.name}</p>
           <p className="text-white/50 text-sm">{created.email}</p>
-          <p className="text-white/30 text-xs font-mono mt-2">{created.memberId}</p>
-          <p className="text-white/40 text-xs mt-4 leading-relaxed">
-            Tell the customer to sign in at <span className="text-green-400">webercountyarchery.com/login</span> — their QR code will be waiting.
+          <p className="text-white/30 text-xs font-mono mt-1">{created.memberId}</p>
+
+          {created.passLabel && created.price !== null && (
+            <div className="mt-5 bg-white/5 rounded-xl px-4 py-3 text-left">
+              <div className="flex justify-between items-center">
+                <p className="text-white/70 text-sm">{created.passLabel}</p>
+                <p className="text-green-400 font-black text-lg">${created.price}</p>
+              </div>
+              <p className="text-white/30 text-xs mt-1">Pass activated — QR code ready immediately</p>
+            </div>
+          )}
+
+          <p className="text-white/40 text-xs mt-5 leading-relaxed">
+            Tell {created.name.split(' ')[0]} to sign in at{' '}
+            <span className="text-green-400">webercountyarchery.com/login</span> to access their QR code.
           </p>
         </div>
+        {error && <p className="text-yellow-400 text-sm">{error}</p>}
         <button
-          onClick={() => setCreated(null)}
+          onClick={reset}
           className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold rounded-xl py-3 transition-colors"
         >
           Register Another Member
@@ -286,24 +362,112 @@ function RegisterPanel() {
   }
 
   return (
-    <form onSubmit={handleRegister} className="flex flex-col gap-4">
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
-        <p className="text-xs text-white/40 uppercase tracking-wide">New Member Info</p>
-        {field('name',     'Full Name',          'text',     'Jane Smith')}
-        {field('email',    'Email',              'email',    'jane@example.com')}
-        {field('phone',    'Phone (optional)',   'tel',      '(801) 555-0100')}
-        {field('password', 'Temporary Password', 'password', 'min 6 characters')}
-        <p className="text-white/30 text-xs">
-          Give the customer this password — they can change it after logging in.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
+      {/* Member info */}
+      <section className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
+        <p className="text-xs text-white/40 uppercase tracking-wide">1 — Member Info</p>
+        {textField('name',     'Full Name',          'text',     'Frank Johnson')}
+        {textField('email',    'Email',              'email',    'frank@example.com')}
+        {textField('phone',    'Phone (optional)',   'tel',      '(801) 555-0100')}
+        {textField('password', 'Temporary Password', 'password', 'min 6 characters')}
+        <p className="text-white/25 text-xs">Give this password to the customer — they can change it after logging in.</p>
+      </section>
+
+      {/* Pass selection */}
+      <section className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
+        <p className="text-xs text-white/40 uppercase tracking-wide">2 — Add a Pass</p>
+
+        {/* Pass type tabs */}
+        <div className="flex bg-white/5 rounded-xl p-1">
+          {([['membership', 'Membership'], ['punch', 'Punch Pass'], ['none', 'Skip']] as [PassChoice, string][]).map(([val, label]) => (
+            <button key={val} type="button" onClick={() => setPassChoice(val)}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${passChoice === val ? val === 'none' ? 'bg-white/10 text-white/60' : 'bg-green-600 text-white' : 'text-white/30 hover:text-white'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {passChoice === 'membership' && (
+          <>
+            <div className="flex flex-col gap-2">
+              {MEMBERSHIP_TYPES.map((type) => (
+                <button key={type} type="button" onClick={() => setMemberType(type)}
+                  className={`text-left p-3 rounded-xl border-2 transition-all ${memberType === type ? 'border-green-500 bg-green-500/10' : 'border-white/10 hover:border-white/20'}`}>
+                  <div className="flex justify-between items-center">
+                    <p className="font-semibold text-white text-sm">{MEMBERSHIP_LABELS[type]}</p>
+                    <p className="text-green-400 font-bold text-sm">${MEMBERSHIP_PRICES[type][tier]}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div>
+              <p className="text-xs text-white/40 uppercase tracking-wide mb-2">Member Type</p>
+              <div className="grid grid-cols-3 gap-2">
+                {TIERS.map((t) => (
+                  <button key={t} type="button" onClick={() => setTier(t)}
+                    className={`py-2 rounded-xl border-2 text-xs font-semibold transition-all ${tier === t ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-white/10 text-white/50 hover:border-white/20'}`}>
+                    {TIER_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {passChoice === 'punch' && (
+          <div className="flex flex-col gap-2">
+            {PUNCH_OPTIONS.map((count) => (
+              <button key={count} type="button" onClick={() => setPunches(count)}
+                className={`text-left p-3 rounded-xl border-2 transition-all ${punches === count ? 'border-green-500 bg-green-500/10' : 'border-white/10 hover:border-white/20'}`}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold text-white text-sm">{count}-Visit Pass</p>
+                    <p className="text-white/30 text-xs">${(PUNCH_PASS_PRICES[count] / count).toFixed(2)}/visit · Never expires</p>
+                  </div>
+                  <p className="text-green-400 font-bold">${PUNCH_PASS_PRICES[count]}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {passChoice === 'none' && (
+          <p className="text-white/30 text-xs">No pass — account only. You can add a pass later from the Sell Pass tab.</p>
+        )}
+      </section>
+
+      {/* Payment */}
+      {passChoice !== 'none' && (
+        <section className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
+          <p className="text-xs text-white/40 uppercase tracking-wide">3 — Payment</p>
+          <div className="flex gap-2">
+            {(['cash', 'square'] as const).map((method) => (
+              <button key={method} type="button" onClick={() => setPaymentMethod(method)}
+                className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${paymentMethod === method ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-white/10 text-white/40 hover:border-white/20'}`}>
+                {method === 'cash' ? 'Cash' : 'Square Terminal'}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3">
+            <p className="text-white/60 text-sm">Collect from customer</p>
+            <p className="text-green-400 font-black text-2xl">${passPrice}</p>
+          </div>
+        </section>
+      )}
+
       {error && <p className="text-red-400 text-sm">{error}</p>}
+
       <button
         type="submit"
         disabled={loading}
         className="w-full bg-green-500 hover:bg-green-400 disabled:bg-green-900 text-black font-bold rounded-xl py-3 min-h-[52px] transition-colors"
       >
-        {loading ? 'Creating account…' : 'Create Account'}
+        {loading
+          ? 'Processing…'
+          : passChoice !== 'none'
+          ? `Collect $${passPrice} & Register`
+          : 'Create Account'}
       </button>
     </form>
   );
