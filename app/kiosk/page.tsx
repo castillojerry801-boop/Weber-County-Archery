@@ -97,7 +97,6 @@ function KioskPinGate({ onUnlock }: { onUnlock: () => void }) {
 
 export default function KioskPage() {
   const [unlocked, setUnlocked] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const bufferRef = useRef('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,7 +105,6 @@ export default function KioskPage() {
   const [scanning, setScanning] = useState(false);
   const [idle, setIdle] = useState(true);
 
-  // Check sessionStorage for existing unlock on mount
   useEffect(() => {
     if (sessionStorage.getItem('kiosk_unlocked') === '1') setUnlocked(true);
   }, []);
@@ -116,7 +114,6 @@ export default function KioskPage() {
     setScanning(false);
     setIdle(true);
     bufferRef.current = '';
-    inputRef.current?.focus();
   }, []);
 
   const processCode = useCallback(async (code: string) => {
@@ -130,8 +127,6 @@ export default function KioskPage() {
       const data: ScanResponse = await res.json();
       setScan(data);
       setScanning(false);
-
-      // Auto-reset after 4 seconds
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
       resetTimerRef.current = setTimeout(resetToIdle, IDLE_TIMEOUT_MS);
     } catch {
@@ -142,50 +137,33 @@ export default function KioskPage() {
     }
   }, [resetToIdle]);
 
-  // Keep input focused at all times
+  // Capture USB scanner input at the document level — no focus required.
+  // Works as long as the kiosk browser tab is the active window.
   useEffect(() => {
-    const focus = () => inputRef.current?.focus();
-    focus();
-    document.addEventListener('click', focus);
-    return () => document.removeEventListener('click', focus);
-  }, []);
-
-  // Handle USB scanner keyboard input
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      const code = bufferRef.current;
-      bufferRef.current = '';
-      if (timerRef.current) clearTimeout(timerRef.current);
-      processCode(code);
+    if (!unlocked) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Enter') {
+        const code = bufferRef.current;
+        bufferRef.current = '';
+        if (timerRef.current) clearTimeout(timerRef.current);
+        if (code) processCode(code);
+      } else if (e.key.length === 1) {
+        bufferRef.current += e.key;
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => { bufferRef.current = ''; }, 500);
+      }
     }
-  }
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    bufferRef.current = e.target.value;
-    // Clear buffer after 500ms of no input (catches stray characters)
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => { bufferRef.current = ''; }, 500);
-  }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [unlocked, processCode]);
 
   const s = scan ? RESULT_STYLES[scan.result] : null;
 
   if (!unlocked) return <KioskPinGate onUnlock={() => setUnlocked(true)} />;
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] select-none overflow-hidden"
-      onClick={() => inputRef.current?.focus()}
-    >
-      {/* Hidden scanner input — always focused */}
-      <input
-        ref={inputRef}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        className="absolute opacity-0 w-0 h-0 pointer-events-none"
-        aria-hidden="true"
-        autoFocus
-        autoComplete="off"
-      />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] select-none overflow-hidden">
+
 
       {/* Idle state */}
       {idle && !scanning && (
