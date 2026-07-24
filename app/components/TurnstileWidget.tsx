@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
 
 type Props = {
@@ -7,12 +8,20 @@ type Props = {
   onExpire?: () => void;
 };
 
-// Test keys — replace with real keys from Cloudflare Dashboard → Turnstile
-// Site key goes in NEXT_PUBLIC_TURNSTILE_SITE_KEY env var
-// Secret key goes in TURNSTILE_SECRET_KEY env var
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA';
+const IS_TEST_KEY = SITE_KEY === '1x00000000000000000000AA';
 
 export function TurnstileWidget({ onVerify, onExpire }: Props) {
+  const called = useRef(false);
+
+  // Test key auto-verifies immediately so the button is never stuck disabled
+  useEffect(() => {
+    if (IS_TEST_KEY && !called.current) {
+      called.current = true;
+      onVerify('test-token');
+    }
+  }, [onVerify]);
+
   return (
     <Turnstile
       siteKey={SITE_KEY}
