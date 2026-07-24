@@ -231,11 +231,14 @@ export default function KioskPage() {
       )}
 
       {/* Footer */}
-      <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-6">
-        <p className="text-white/10 text-xs uppercase tracking-widest">Weber County Archery Park · Kiosk</p>
-        <a href="/staff" className="text-white/10 hover:text-white/30 text-xs transition-colors">
+      <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-6">
+        <a
+          href="/staff"
+          className="text-white/30 hover:text-white/60 text-sm font-medium transition-colors"
+        >
           ← Staff Portal
         </a>
+        <p className="text-white/10 text-xs uppercase tracking-widest">Weber County Archery Park · Kiosk</p>
       </div>
     </div>
   );

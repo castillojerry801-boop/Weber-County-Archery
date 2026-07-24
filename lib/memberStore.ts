@@ -195,4 +195,23 @@ export const checkInStore = {
       .order('checked_in_at', { ascending: false }).limit(limit);
     return (data ?? []).map((r) => toCheckIn(r as CheckInRow));
   },
+
+  async todayCount(): Promise<number> {
+    const today = new Date().toISOString().split('T')[0];
+    const { count } = await db.from('check_ins')
+      .select('*', { count: 'exact', head: true })
+      .gte('checked_in_at', `${today}T00:00:00.000Z`);
+    return count ?? 0;
+  },
+
+  async recentWithNames(limit = 30): Promise<Array<CheckInLog & { memberName: string }>> {
+    const { data } = await db.from('check_ins').select()
+      .order('checked_in_at', { ascending: false }).limit(limit);
+    if (!data || data.length === 0) return [];
+    const logs = data.map((r) => toCheckIn(r as CheckInRow));
+    const userIds = [...new Set(logs.map((l) => l.userId))];
+    const { data: members } = await db.from('members').select('id, name').in('id', userIds);
+    const nameMap = new Map((members ?? []).map((m: { id: string; name: string }) => [m.id, m.name]));
+    return logs.map((l) => ({ ...l, memberName: nameMap.get(l.userId) ?? 'Unknown' }));
+  },
 };

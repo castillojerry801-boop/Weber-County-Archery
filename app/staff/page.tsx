@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Logo } from '@/app/components/Logo';
+import { CheckInFeed } from '@/app/components/CheckInFeed';
 
 export default function StaffPage() {
   return (
@@ -56,6 +57,8 @@ export default function StaffPage() {
           </Link>
         </div>
       </div>
+
+      <CheckInFeed />
 
       <Link
         href="/admin"
