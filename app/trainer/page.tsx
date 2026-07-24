@@ -168,12 +168,20 @@ export default function TrainerPage() {
           <h1 className="font-bold text-gray-900">My Schedule</h1>
           <p className="text-xs text-gray-500">{trainer.name} · {trainer.role}</p>
         </div>
-        <button
-          onClick={() => setTrainer(null)}
-          className="text-sm text-gray-400 hover:text-gray-600 min-h-[44px] px-2"
-        >
-          Sign Out
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href="/kiosk"
+            className="text-sm text-green-600 hover:text-green-700 font-medium border border-green-200 hover:border-green-400 rounded-lg px-3 py-1.5 min-h-[44px] flex items-center transition-colors"
+          >
+            Open Kiosk
+          </a>
+          <button
+            onClick={() => setTrainer(null)}
+            className="text-sm text-gray-400 hover:text-gray-600 min-h-[44px] px-2"
+          >
+            Sign Out
+          </button>
+        </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
