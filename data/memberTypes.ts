@@ -6,13 +6,16 @@ export type MembershipStatus = 'active' | 'expired' | 'cancelled';
 
 export type ScanResult = 'green' | 'yellow' | 'red';
 
+export type UserRole = 'member' | 'volunteer' | 'employee' | 'admin';
+
 export type User = {
   id: string;
   email: string;
   name: string;
   phone: string;
-  passwordHash: string; // TODO: bcrypt in production
-  memberId: string;     // unique public ID encoded in QR code
+  passwordHash: string;
+  memberId: string;
+  role: UserRole;
   createdAt: string;
 };
 

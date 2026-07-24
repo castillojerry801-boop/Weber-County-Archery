@@ -57,7 +57,14 @@ export default function StaffPage() {
         </div>
       </div>
 
-      <Link href="/" className="text-white/20 hover:text-white/40 text-xs mt-10 transition-colors">
+      <Link
+        href="/admin"
+        className="text-white/20 hover:text-white/40 text-xs mt-10 transition-colors"
+      >
+        Admin Panel
+      </Link>
+
+      <Link href="/" className="text-white/20 hover:text-white/40 text-xs mt-2 transition-colors">
         ← Back to home
       </Link>
     </main>

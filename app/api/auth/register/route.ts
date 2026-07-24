@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     phone,
     passwordHash,
     memberId: `WCAP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+    role: 'member',
     createdAt: new Date().toISOString(),
   };
 

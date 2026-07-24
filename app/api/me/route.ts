@@ -22,6 +22,7 @@ export async function GET() {
     email: user.email,
     phone: user.phone,
     memberId: user.memberId,
+    role: user.role,
     createdAt: user.createdAt,
     activeMembership: activeMembership ?? null,
     activePunchPass: activePunchPass ?? null,

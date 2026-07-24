@@ -4,7 +4,7 @@ import type { User, Membership, PunchPass, CheckInLog } from '@/data/memberTypes
 // --- DB row types (snake_case from Postgres) ---
 type MemberRow = {
   id: string; email: string; name: string; phone: string;
-  password_hash: string; member_id: string; created_at: string;
+  password_hash: string; member_id: string; role: string; created_at: string;
 };
 type MembershipRow = {
   id: string; user_id: string; type: string; tier: string; status: string;
@@ -23,7 +23,8 @@ type CheckInRow = {
 // --- Mappers ---
 function toUser(r: MemberRow): User {
   return { id: r.id, email: r.email, name: r.name, phone: r.phone,
-    passwordHash: r.password_hash, memberId: r.member_id, createdAt: r.created_at };
+    passwordHash: r.password_hash, memberId: r.member_id,
+    role: (r.role ?? 'member') as User['role'], createdAt: r.created_at };
 }
 function toMembership(r: MembershipRow): Membership {
   return { id: r.id, userId: r.user_id, type: r.type as Membership['type'],
@@ -77,9 +78,29 @@ export const userStore = {
   async add(user: User): Promise<void> {
     const { error } = await db.from('members').insert({
       id: user.id, email: user.email, name: user.name, phone: user.phone,
-      password_hash: user.passwordHash, member_id: user.memberId, created_at: user.createdAt,
+      password_hash: user.passwordHash, member_id: user.memberId,
+      role: user.role ?? 'member', created_at: user.createdAt,
     });
     if (error) throw error;
+  },
+
+  async updateRole(id: string, role: User['role']): Promise<void> {
+    const { error } = await db.from('members').update({ role }).eq('id', id);
+    if (error) throw error;
+  },
+
+  async search(q: string, limit = 20): Promise<User[]> {
+    const { data } = await db.from('members').select()
+      .or(`email.ilike.%${q}%,name.ilike.%${q}%`)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    return (data ?? []).map((r) => toUser(r as MemberRow));
+  },
+
+  async listAll(limit = 100): Promise<User[]> {
+    const { data } = await db.from('members').select()
+      .order('created_at', { ascending: false }).limit(limit);
+    return (data ?? []).map((r) => toUser(r as MemberRow));
   },
 };
 
