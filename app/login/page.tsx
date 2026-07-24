@@ -4,22 +4,26 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/app/components/Logo';
+import { TurnstileWidget } from '@/app/components/TurnstileWidget';
 
 export default function LoginPage() {
   const router = useRouter();
   const [form, setForm] = useState({ email: '', password: '' });
+  const [honeypot, setHoneypot] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    if (!turnstileToken) { setError('Please complete the security check.'); return; }
     setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, honeypot, turnstile: turnstileToken }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
@@ -32,16 +36,17 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-8">
-          <Logo size={60} />
+          <div className="flex justify-center">
+            <Logo size={60} />
+          </div>
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
           <h1 className="text-xl font-bold text-white mb-1">Member Sign In</h1>
           <p className="text-white/40 text-sm mb-6">Access your passes and QR code</p>
 
-          {/* TODO: Wire up real Google OAuth */}
+          {/* TODO: Wire up real Google OAuth (Clerk or NextAuth) */}
           <button
             type="button"
             className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold rounded-xl px-4 py-3 mb-4 transition-colors min-h-[48px]"
@@ -62,11 +67,24 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Honeypot — hidden from real users, bots fill it in */}
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              autoComplete="off"
+              tabIndex={-1}
+              aria-hidden="true"
+              className="absolute opacity-0 w-0 h-0 pointer-events-none"
+            />
+
             <div>
               <label className="block text-xs font-medium text-white/60 mb-1">Email</label>
               <input
                 type="email"
                 required
+                autoComplete="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 placeholder="you@example.com"
@@ -78,6 +96,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
+                autoComplete="current-password"
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 placeholder="••••••••"
@@ -85,12 +104,18 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* Cloudflare Turnstile */}
+            <TurnstileWidget
+              onVerify={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+            />
+
             {error && <p className="text-red-400 text-sm">{error}</p>}
 
             <button
               type="submit"
-              disabled={loading}
-              className="bg-green-500 hover:bg-green-400 disabled:bg-green-800 text-black font-bold rounded-xl px-4 py-3 min-h-[48px] transition-colors"
+              disabled={loading || !turnstileToken}
+              className="bg-green-500 hover:bg-green-400 disabled:bg-green-900 disabled:cursor-not-allowed text-black font-bold rounded-xl px-4 py-3 min-h-[48px] transition-colors"
             >
               {loading ? 'Signing in…' : 'Sign In'}
             </button>
@@ -104,9 +129,7 @@ export default function LoginPage() {
           </Link>
         </p>
         <p className="text-center mt-4">
-          <Link href="/" className="text-white/20 hover:text-white/40 text-xs">
-            ← Back to home
-          </Link>
+          <Link href="/" className="text-white/20 hover:text-white/40 text-xs">← Back to home</Link>
         </p>
       </div>
     </div>

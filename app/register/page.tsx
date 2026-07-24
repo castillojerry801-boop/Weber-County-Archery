@@ -4,10 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/app/components/Logo';
+import { TurnstileWidget } from '@/app/components/TurnstileWidget';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '' });
+  const [honeypot, setHoneypot] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,12 +19,13 @@ export default function RegisterPage() {
     setError('');
     if (form.password !== form.confirm) { setError('Passwords do not match'); return; }
     if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (!turnstileToken) { setError('Please complete the security check.'); return; }
     setLoading(true);
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password }),
+        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password, honeypot, turnstile: turnstileToken }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
@@ -79,18 +83,35 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Honeypot — invisible to real users, bots fill it in */}
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              autoComplete="off"
+              tabIndex={-1}
+              aria-hidden="true"
+              className="absolute opacity-0 w-0 h-0 pointer-events-none"
+            />
+
             {field('name', 'Full Name', 'text', 'Jane Smith')}
             {field('email', 'Email', 'email', 'you@example.com')}
             {field('phone', 'Phone (optional)', 'tel', '(801) 555-0100')}
             {field('password', 'Password', 'password', '••••••••')}
             {field('confirm', 'Confirm Password', 'password', '••••••••')}
 
+            <TurnstileWidget
+              onVerify={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+            />
+
             {error && <p className="text-red-400 text-sm">{error}</p>}
 
             <button
               type="submit"
-              disabled={loading}
-              className="bg-green-500 hover:bg-green-400 disabled:bg-green-800 text-black font-bold rounded-xl px-4 py-3 min-h-[48px] transition-colors"
+              disabled={loading || !turnstileToken}
+              className="bg-green-500 hover:bg-green-400 disabled:bg-green-900 disabled:cursor-not-allowed text-black font-bold rounded-xl px-4 py-3 min-h-[48px] transition-colors"
             >
               {loading ? 'Creating account…' : 'Create Account'}
             </button>

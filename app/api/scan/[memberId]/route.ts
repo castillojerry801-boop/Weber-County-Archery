@@ -1,31 +1,41 @@
 import type { NextRequest } from 'next/server';
+import { headers } from 'next/headers';
+import { z } from 'zod';
 import { userStore, membershipStore, punchStore, checkInStore } from '@/lib/memberStore';
+import { checkRateLimit } from '@/lib/rateLimit';
 import type { ScanResult } from '@/data/memberTypes';
 
+const memberIdSchema = z.string().min(1).max(50).regex(/^WCAP-[A-Z0-9]+$/, 'Invalid member ID format');
+
 function daysUntil(dateStr: string): number {
-  const diff = new Date(dateStr).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
 }
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ memberId: string }> },
 ) {
-  const { memberId } = await params;
+  const headerList = await headers();
+  const ip = headerList.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
+
+  // Rate limit kiosk: 60 scans per minute per IP (generous for a real scanner)
+  const rl = checkRateLimit(`scan:${ip}`, 60, 60 * 1000);
+  if (!rl.allowed) {
+    return Response.json({ result: 'red', title: 'Slow Down', message: 'Too many scans. Wait a moment.' });
+  }
+
+  const { memberId: raw } = await params;
+  const parsed = memberIdSchema.safeParse(raw);
+  if (!parsed.success) {
+    return Response.json({ result: 'red' as ScanResult, title: 'Invalid Code', message: 'QR code not recognized.', name: null });
+  }
+  const memberId = parsed.data;
 
   const user = userStore.findByMemberId(memberId);
   if (!user) {
-    return Response.json({
-      result: 'red' as ScanResult,
-      title: 'Not Found',
-      message: 'Member ID not recognized.',
-      name: null,
-    });
+    return Response.json({ result: 'red' as ScanResult, title: 'Not Found', message: 'Member ID not recognized.', name: null });
   }
 
-  const today = new Date().toISOString().split('T')[0];
-
-  // Check time-based membership first
   const membership = membershipStore.findActiveForMember(user.id, user.email);
   if (membership) {
     const days = daysUntil(membership.endDate);
@@ -55,7 +65,6 @@ export async function POST(
     });
   }
 
-  // Check punch pass
   const punch = punchStore.findActiveByUserId(user.id);
   if (punch && punch.punchesRemaining > 0) {
     const remaining = punchStore.deduct(punch.id);
@@ -83,7 +92,6 @@ export async function POST(
     });
   }
 
-  // No valid pass
   checkInStore.add({
     id: crypto.randomUUID(),
     memberId,

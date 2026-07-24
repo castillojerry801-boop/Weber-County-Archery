@@ -14,6 +14,8 @@ type ScanResponse = {
 };
 
 const IDLE_TIMEOUT_MS = 4000;
+// Set NEXT_PUBLIC_KIOSK_PIN in env to change (default 9472)
+const KIOSK_PIN = process.env.NEXT_PUBLIC_KIOSK_PIN ?? '9472';
 
 const RESULT_STYLES: Record<ScanResult, {
   bg: string; ring: string; title: string; icon: string; textColor: string;
@@ -23,7 +25,73 @@ const RESULT_STYLES: Record<ScanResult, {
   red:    { bg: 'bg-red-500',    ring: 'ring-red-300',    title: 'text-red-100',   icon: '✕', textColor: 'text-red-50'    },
 };
 
+function KioskPinGate({ onUnlock }: { onUnlock: () => void }) {
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState(false);
+
+  function handleKey(digit: string) {
+    if (pin.length >= 6) return;
+    const next = pin + digit;
+    setPin(next);
+    setError(false);
+    if (next.length === KIOSK_PIN.length) {
+      if (next === KIOSK_PIN) {
+        sessionStorage.setItem('kiosk_unlocked', '1');
+        onUnlock();
+      } else {
+        setError(true);
+        setTimeout(() => { setPin(''); setError(false); }, 800);
+      }
+    }
+  }
+
+  function handleClear() { setPin(''); setError(false); }
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-8 select-none">
+      <div className="text-center">
+        <p className="text-white/20 text-xs uppercase tracking-widest mb-2">Staff Kiosk</p>
+        <p className="text-white/60 text-lg font-semibold">Enter PIN to unlock</p>
+      </div>
+
+      {/* PIN dots */}
+      <div className="flex gap-3">
+        {Array.from({ length: KIOSK_PIN.length }).map((_, i) => (
+          <div
+            key={i}
+            className={`w-4 h-4 rounded-full border-2 transition-colors ${
+              i < pin.length
+                ? error ? 'bg-red-500 border-red-500' : 'bg-white border-white'
+                : 'bg-transparent border-white/20'
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Number pad */}
+      <div className="grid grid-cols-3 gap-3">
+        {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key) => (
+          <button
+            key={key}
+            onClick={() => key === '⌫' ? handleClear() : key ? handleKey(key) : null}
+            className={`w-20 h-20 rounded-2xl text-2xl font-bold transition-colors ${
+              key === ''
+                ? 'pointer-events-none'
+                : 'bg-white/5 hover:bg-white/15 active:bg-white/20 text-white border border-white/10'
+            }`}
+          >
+            {key}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-white/10 text-xs mt-4">Weber County Archery Park</p>
+    </div>
+  );
+}
+
 export default function KioskPage() {
+  const [unlocked, setUnlocked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const bufferRef = useRef('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -32,6 +100,11 @@ export default function KioskPage() {
   const [scan, setScan] = useState<ScanResponse | null>(null);
   const [scanning, setScanning] = useState(false);
   const [idle, setIdle] = useState(true);
+
+  // Check sessionStorage for existing unlock on mount
+  useEffect(() => {
+    if (sessionStorage.getItem('kiosk_unlocked') === '1') setUnlocked(true);
+  }, []);
 
   const resetToIdle = useCallback(() => {
     setScan(null);
@@ -90,6 +163,8 @@ export default function KioskPage() {
   }
 
   const s = scan ? RESULT_STYLES[scan.result] : null;
+
+  if (!unlocked) return <KioskPinGate onUnlock={() => setUnlocked(true)} />;
 
   return (
     <div
