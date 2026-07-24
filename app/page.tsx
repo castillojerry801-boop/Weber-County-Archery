@@ -22,16 +22,10 @@ export default function Home() {
             Member Login
           </Link>
           <Link
-            href="/trainer"
+            href="/staff"
             className="text-xs text-white/60 hover:text-white border border-white/20 hover:border-white/50 rounded-lg px-4 py-2 transition-all"
           >
             Staff Login
-          </Link>
-          <Link
-            href="/kiosk"
-            className="text-xs text-white/60 hover:text-white border border-white/20 hover:border-white/50 rounded-lg px-4 py-2 transition-all"
-          >
-            Kiosk
           </Link>
         </div>
       </header>

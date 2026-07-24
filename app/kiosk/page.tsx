@@ -86,7 +86,7 @@ function KioskPinGate({ onUnlock }: { onUnlock: () => void }) {
       </div>
 
       <a
-        href="/trainer"
+        href="/staff"
         className="text-white/20 hover:text-white/40 text-xs mt-2 transition-colors"
       >
         ← Back to Staff Portal
@@ -255,7 +255,7 @@ export default function KioskPage() {
       {/* Footer */}
       <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-6">
         <p className="text-white/10 text-xs uppercase tracking-widest">Weber County Archery Park · Kiosk</p>
-        <a href="/trainer" className="text-white/10 hover:text-white/30 text-xs transition-colors">
+        <a href="/staff" className="text-white/10 hover:text-white/30 text-xs transition-colors">
           ← Staff Portal
         </a>
       </div>

@@ -14,7 +14,7 @@ const PROVIDER_PINS: Record<string, string> = {
   '3333': 'instructor-3',
 };
 
-type View = 'hub' | 'login' | 'dashboard';
+type View = 'login' | 'dashboard';
 
 type AddForm = {
   customerName: string;
@@ -41,7 +41,7 @@ function formatDisplayDate(dateStr: string): string {
 }
 
 export default function TrainerPage() {
-  const [view, setView] = useState<View>('hub');
+  const [view, setView] = useState<View>('login');
   const [pin, setPin] = useState('');
   const [trainer, setTrainer] = useState<Provider | null>(null);
   const [pinError, setPinError] = useState('');
@@ -72,7 +72,7 @@ export default function TrainerPage() {
     setTrainer(null);
     setPin('');
     setPinError('');
-    setView('hub');
+    setView('login');
   }
 
   const fetchBookings = useCallback(async () => {
@@ -128,51 +128,6 @@ export default function TrainerPage() {
     setSelectedDate(toDateStr(d));
   }
 
-  // ── Hub ──
-  if (view === 'hub') {
-    return (
-      <main className="min-h-screen bg-[#0d0d0d] flex flex-col items-center justify-center px-4 py-12">
-        <p className="text-white/30 text-xs uppercase tracking-widest mb-10">Staff Portal</p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-xl">
-          {/* Trainer card */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col items-center text-center gap-6 hover:bg-white/8 transition-colors">
-            <Logo size={72} showText={false} href="" />
-            <div>
-              <h2 className="text-white font-bold text-xl">Trainer</h2>
-              <p className="text-white/40 text-sm mt-1">Schedule &amp; sessions</p>
-            </div>
-            <button
-              onClick={() => setView('login')}
-              className="w-full bg-green-500 hover:bg-green-400 text-black font-bold rounded-xl py-3 min-h-[48px] transition-colors"
-            >
-              Trainer Login
-            </button>
-          </div>
-
-          {/* Kiosk card */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col items-center text-center gap-6 hover:bg-white/8 transition-colors">
-            <Logo size={72} showText={false} href="" />
-            <div>
-              <h2 className="text-white font-bold text-xl">Kiosk</h2>
-              <p className="text-white/40 text-sm mt-1">Member check-in scanner</p>
-            </div>
-            <a
-              href="/kiosk"
-              className="w-full block bg-green-500 hover:bg-green-400 text-black font-bold rounded-xl py-3 min-h-[48px] leading-[48px] transition-colors"
-            >
-              Open Kiosk
-            </a>
-          </div>
-        </div>
-
-        <a href="/" className="text-white/20 hover:text-white/40 text-xs mt-10 transition-colors">
-          ← Back to home
-        </a>
-      </main>
-    );
-  }
-
   // ── Trainer PIN login ──
   if (view === 'login') {
     return (
@@ -205,12 +160,12 @@ export default function TrainerPage() {
             </button>
           </form>
         </div>
-        <button
-          onClick={() => { setView('hub'); setPinError(''); setPin(''); }}
+        <a
+          href="/staff"
           className="text-white/30 hover:text-white/60 text-sm mt-6 transition-colors"
         >
-          ← Back
-        </button>
+          ← Back to Staff Portal
+        </a>
       </main>
     );
   }
@@ -222,12 +177,12 @@ export default function TrainerPage() {
     <main className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setView('hub')}
-            className="text-sm text-gray-400 hover:text-gray-600 min-h-[44px] px-2 transition-colors"
+          <a
+            href="/staff"
+            className="text-sm text-gray-400 hover:text-gray-600 min-h-[44px] px-2 flex items-center transition-colors"
           >
-            ← Back
-          </button>
+            ← Staff Portal
+          </a>
           <div>
             <h1 className="font-bold text-gray-900">My Schedule</h1>
             <p className="text-xs text-gray-500">{trainer?.name} · {trainer?.role}</p>
