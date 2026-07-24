@@ -27,9 +27,12 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password, honeypot, turnstile: turnstileToken }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error); return; }
+      let data: { error?: string } = {};
+      try { data = await res.json(); } catch { /* non-JSON response */ }
+      if (!res.ok) { setError(data.error ?? `Server error (${res.status})`); return; }
       router.push('/member');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }

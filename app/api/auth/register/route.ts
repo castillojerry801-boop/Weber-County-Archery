@@ -64,7 +64,13 @@ export async function POST(request: NextRequest) {
     createdAt: new Date().toISOString(),
   };
 
-  await userStore.add(user);
+  try {
+    await userStore.add(user);
+  } catch (e) {
+    console.error('[register] Supabase insert failed:', e);
+    const msg = e instanceof Error ? e.message : String(e);
+    return Response.json({ error: `Database error: ${msg}` }, { status: 500 });
+  }
 
   const cookieStore = await cookies();
   cookieStore.set('member_session', user.id, {
