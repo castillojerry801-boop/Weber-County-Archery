@@ -8,13 +8,13 @@ import { AdminBookingCard } from '@/app/components/scheduler/AdminBookingCard';
 import { EmptyState } from '@/app/components/scheduler/EmptyState';
 import { LoadingState } from '@/app/components/scheduler/LoadingState';
 
-// TODO: Replace with real auth (Clerk, NextAuth, etc.)
-// Each provider maps to a PIN for demo purposes
 const PROVIDER_PINS: Record<string, string> = {
   '1111': 'instructor-1',
   '2222': 'instructor-2',
   '3333': 'instructor-3',
 };
+
+type View = 'hub' | 'login' | 'dashboard';
 
 type AddForm = {
   customerName: string;
@@ -41,6 +41,7 @@ function formatDisplayDate(dateStr: string): string {
 }
 
 export default function TrainerPage() {
+  const [view, setView] = useState<View>('hub');
   const [pin, setPin] = useState('');
   const [trainer, setTrainer] = useState<Provider | null>(null);
   const [pinError, setPinError] = useState('');
@@ -61,9 +62,17 @@ export default function TrainerPage() {
       const provider = schedulerConfig.providers.find((p) => p.id === providerId) ?? null;
       setTrainer(provider);
       setPinError('');
+      setView('dashboard');
     } else {
       setPinError('Incorrect PIN. Try again.');
     }
+  }
+
+  function handleSignOut() {
+    setTrainer(null);
+    setPin('');
+    setPinError('');
+    setView('hub');
   }
 
   const fetchBookings = useCallback(async () => {
@@ -119,75 +128,121 @@ export default function TrainerPage() {
     setSelectedDate(toDateStr(d));
   }
 
-  // — Login screen —
-  if (!trainer) {
+  // ── Hub ──
+  if (view === 'hub') {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-sm">
-          <div className="text-center mb-6">
-            <div className="bg-[#111] rounded-xl p-2 inline-block mb-3">
-              <Logo size={60} showText={false} href="" />
+      <main className="min-h-screen bg-[#0d0d0d] flex flex-col items-center justify-center px-4 py-12">
+        <p className="text-white/30 text-xs uppercase tracking-widest mb-10">Staff Portal</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-xl">
+          {/* Trainer card */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col items-center text-center gap-6 hover:bg-white/8 transition-colors">
+            <Logo size={72} showText={false} href="" />
+            <div>
+              <h2 className="text-white font-bold text-xl">Trainer</h2>
+              <p className="text-white/40 text-sm mt-1">Schedule &amp; sessions</p>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Trainer Login</h1>
-            <p className="text-sm text-gray-400 mt-1">Weber County Archery Park</p>
+            <button
+              onClick={() => setView('login')}
+              className="w-full bg-green-500 hover:bg-green-400 text-black font-bold rounded-xl py-3 min-h-[48px] transition-colors"
+            >
+              Trainer Login
+            </button>
+          </div>
+
+          {/* Kiosk card */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col items-center text-center gap-6 hover:bg-white/8 transition-colors">
+            <Logo size={72} showText={false} href="" />
+            <div>
+              <h2 className="text-white font-bold text-xl">Kiosk</h2>
+              <p className="text-white/40 text-sm mt-1">Member check-in scanner</p>
+            </div>
+            <a
+              href="/kiosk"
+              className="w-full block bg-green-500 hover:bg-green-400 text-black font-bold rounded-xl py-3 min-h-[48px] leading-[48px] transition-colors"
+            >
+              Open Kiosk
+            </a>
+          </div>
+        </div>
+
+        <a href="/" className="text-white/20 hover:text-white/40 text-xs mt-10 transition-colors">
+          ← Back to home
+        </a>
+      </main>
+    );
+  }
+
+  // ── Trainer PIN login ──
+  if (view === 'login') {
+    return (
+      <main className="min-h-screen bg-[#0d0d0d] flex flex-col items-center justify-center px-4">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 w-full max-w-sm">
+          <div className="flex flex-col items-center mb-6">
+            <Logo size={64} showText={false} href="" />
+            <h1 className="text-white font-bold text-xl mt-4">Trainer Login</h1>
+            <p className="text-white/40 text-sm mt-1">Weber County Archery Park</p>
           </div>
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Trainer PIN</label>
+              <label className="block text-xs font-medium text-white/60 mb-1">Trainer PIN</label>
               <input
                 type="password"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
                 placeholder="Enter your PIN"
                 autoFocus
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[48px]"
               />
-              {pinError && <p className="text-xs text-red-500 mt-1">{pinError}</p>}
-              {/* TODO: Replace PIN auth with real provider (Clerk, NextAuth, etc.) */}
-              <p className="text-xs text-gray-400 mt-2">Demo PINs: 1111 · 2222 · 3333</p>
+              {pinError && <p className="text-xs text-red-400 mt-1">{pinError}</p>}
+              <p className="text-xs text-white/20 mt-2">Demo PINs: 1111 · 2222 · 3333</p>
             </div>
             <button
               type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-3 min-h-[44px] transition-colors"
+              className="bg-green-500 hover:bg-green-400 text-black font-bold rounded-xl py-3 min-h-[48px] transition-colors"
             >
               Sign In
             </button>
           </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <a
-              href="/kiosk"
-              className="flex items-center justify-center gap-2 w-full bg-gray-900 hover:bg-black text-white font-semibold rounded-lg px-4 py-3 min-h-[44px] transition-colors"
-            >
-              <span>Open Check-In Kiosk</span>
-            </a>
-            <p className="text-xs text-center text-gray-400 mt-2">For front desk scanner use</p>
-          </div>
         </div>
+        <button
+          onClick={() => { setView('hub'); setPinError(''); setPin(''); }}
+          className="text-white/30 hover:text-white/60 text-sm mt-6 transition-colors"
+        >
+          ← Back
+        </button>
       </main>
     );
   }
 
+  // ── Dashboard ──
   const activeSessions = bookings.filter((b) => b.status !== 'cancelled');
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <div>
-          <h1 className="font-bold text-gray-900">My Schedule</h1>
-          <p className="text-xs text-gray-500">{trainer.name} · {trainer.role}</p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setView('hub')}
+            className="text-sm text-gray-400 hover:text-gray-600 min-h-[44px] px-2 transition-colors"
+          >
+            ← Back
+          </button>
+          <div>
+            <h1 className="font-bold text-gray-900">My Schedule</h1>
+            <p className="text-xs text-gray-500">{trainer?.name} · {trainer?.role}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <a
             href="/kiosk"
-            className="text-sm text-green-600 hover:text-green-700 font-medium border border-green-200 hover:border-green-400 rounded-lg px-3 py-1.5 min-h-[44px] flex items-center transition-colors"
+            className="text-sm text-green-600 hover:text-green-700 font-medium border border-green-200 hover:border-green-400 rounded-lg px-3 min-h-[44px] flex items-center transition-colors"
           >
-            Open Kiosk
+            Kiosk
           </a>
           <button
-            onClick={() => setTrainer(null)}
-            className="text-sm text-gray-400 hover:text-gray-600 min-h-[44px] px-2"
+            onClick={handleSignOut}
+            className="text-sm text-gray-400 hover:text-gray-600 min-h-[44px] px-2 transition-colors"
           >
             Sign Out
           </button>
@@ -259,7 +314,7 @@ export default function TrainerPage() {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
                 >
                   {schedulerConfig.services
-                    .filter((s) => trainer.availableServices.includes(s.id))
+                    .filter((s) => trainer?.availableServices.includes(s.id))
                     .map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}

@@ -85,7 +85,12 @@ function KioskPinGate({ onUnlock }: { onUnlock: () => void }) {
         ))}
       </div>
 
-      <p className="text-white/10 text-xs mt-4">Weber County Archery Park</p>
+      <a
+        href="/trainer"
+        className="text-white/20 hover:text-white/40 text-xs mt-2 transition-colors"
+      >
+        ← Back to Staff Portal
+      </a>
     </div>
   );
 }
@@ -248,8 +253,11 @@ export default function KioskPage() {
       )}
 
       {/* Footer */}
-      <div className="absolute bottom-4 left-0 right-0 text-center">
+      <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-6">
         <p className="text-white/10 text-xs uppercase tracking-widest">Weber County Archery Park · Kiosk</p>
+        <a href="/trainer" className="text-white/10 hover:text-white/30 text-xs transition-colors">
+          ← Staff Portal
+        </a>
       </div>
     </div>
   );
