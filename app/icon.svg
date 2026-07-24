@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#0d0d0d"/>
+  <!-- Bow arc -->
+  <path d="M26,8 C8,16 8,48 26,56" stroke="#22c55e" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <!-- Bow string -->
+  <line x1="26" y1="8" x2="26" y2="56" stroke="#22c55e" stroke-width="1.5" opacity="0.55"/>
+  <!-- Arrow shaft -->
+  <line x1="22" y1="32" x2="56" y2="32" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Arrowhead -->
+  <path d="M56,32 L45,25 L45,39 Z" fill="white"/>
+  <!-- Nock -->
+  <path d="M22,32 L17,27 M22,32 L17,37" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
