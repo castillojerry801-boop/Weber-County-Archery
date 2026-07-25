@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Logo } from '@/app/components/Logo';
 import { TurnstileWidget } from '@/app/components/TurnstileWidget';
-import { supabase } from '@/lib/supabase-browser';
+import { getSupabase } from '@/lib/supabase-browser';
 
 function LoginForm() {
   const router = useRouter();
@@ -43,7 +43,7 @@ function LoginForm() {
 
       <button
         type="button"
-        onClick={() => supabase.auth.signInWithOAuth({
+        onClick={() => getSupabase().auth.signInWithOAuth({
           provider: 'google',
           options: { redirectTo: `${window.location.origin}/auth/callback` },
         })}
