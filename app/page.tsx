@@ -4,7 +4,7 @@ import { Logo } from '@/app/components/Logo';
 
 export const metadata: Metadata = {
   title: 'Weber County Archery Park',
-  description: 'Indoor & outdoor archery ranges in Ogden, Utah. Training sessions available by appointment.',
+  description: 'Weber County Archery Park — indoor & outdoor ranges in Ogden, Utah. Book training sessions, manage memberships, purchase range passes, and check in — all in one place.',
 };
 
 export default function Home() {
@@ -168,6 +168,54 @@ export default function Home() {
           <p className="text-center text-white/30 text-xs mt-4">
             Equipment rental available · $5 includes bow, arrows &amp; armguard
           </p>
+        </div>
+      </section>
+
+      {/* ── Member Portal ── */}
+      <section className="px-6 py-16 bg-[#0d0d0d]">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-green-400 text-xs font-bold uppercase tracking-widest mb-2 text-center">Member Portal</p>
+          <h2 className="text-3xl font-black text-center mb-4">Archery. Simplified.</h2>
+          <p className="text-white/50 text-center max-w-xl mx-auto mb-10">
+            Create a free member account to book training sessions, manage your range passes,
+            and check in — all from your phone. No paperwork, no waiting in line.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {[
+              {
+                icon: '📅',
+                title: 'Schedule Sessions',
+                desc: 'Book private lessons and group training sessions online at any time.',
+              },
+              {
+                icon: '✅',
+                title: 'Easy Check-In',
+                desc: 'Scan your member QR code at the range — no staff needed to get on the range.',
+              },
+              {
+                icon: '🎟️',
+                title: 'Manage Passes',
+                desc: 'Purchase day passes, punch passes, and annual memberships. Track your remaining visits.',
+              },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <div className="text-3xl mb-3">{icon}</div>
+                <h3 className="font-bold text-white mb-2">{title}</h3>
+                <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-black font-bold rounded-xl px-8 py-4 text-base transition-colors"
+            >
+              Create Free Account
+            </Link>
+            <p className="text-white/30 text-xs mt-3">Sign in with Google or email — takes 30 seconds</p>
+          </div>
         </div>
       </section>
 
