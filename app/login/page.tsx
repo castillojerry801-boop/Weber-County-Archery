@@ -45,11 +45,15 @@ function LoginForm() {
         type="button"
         onClick={async () => {
           setError('');
-          const { error } = await getSupabase().auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo: `${window.location.origin}/auth/callback` },
-          });
-          if (error) setError(error.message);
+          try {
+            const { error } = await getSupabase().auth.signInWithOAuth({
+              provider: 'google',
+              options: { redirectTo: `${window.location.origin}/auth/callback` },
+            });
+            if (error) setError(error.message);
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'Google sign-in failed');
+          }
         }}
         className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold rounded-xl px-4 py-3 mb-4 transition-colors min-h-[48px]"
       >
