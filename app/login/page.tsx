@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Logo } from '@/app/components/Logo';
 import { TurnstileWidget } from '@/app/components/TurnstileWidget';
-import { getSupabase } from '@/lib/supabase-browser';
 
 function LoginForm() {
   const router = useRouter();
@@ -41,20 +40,8 @@ function LoginForm() {
       <h1 className="text-xl font-bold text-white mb-1">Member Sign In</h1>
       <p className="text-white/40 text-sm mb-6">Access your passes and QR code</p>
 
-      <button
-        type="button"
-        onClick={async () => {
-          setError('');
-          try {
-            const { error } = await getSupabase().auth.signInWithOAuth({
-              provider: 'google',
-              options: { redirectTo: `${window.location.origin}/auth/callback` },
-            });
-            if (error) setError(error.message);
-          } catch (e) {
-            setError(e instanceof Error ? e.message : 'Google sign-in failed');
-          }
-        }}
+      <a
+        href="/api/auth/google"
         className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold rounded-xl px-4 py-3 mb-4 transition-colors min-h-[48px]"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -64,7 +51,7 @@ function LoginForm() {
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
         </svg>
         Continue with Google
-      </button>
+      </a>
 
       <div className="flex items-center gap-3 mb-4">
         <div className="flex-1 h-px bg-white/10" />
