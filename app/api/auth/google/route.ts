@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { flowType: 'implicit' } },
   );
 
   const { data, error } = await supabase.auth.signInWithOAuth({
