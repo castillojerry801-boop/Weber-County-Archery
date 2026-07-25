@@ -43,10 +43,14 @@ function LoginForm() {
 
       <button
         type="button"
-        onClick={() => getSupabase().auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: `${window.location.origin}/auth/callback` },
-        })}
+        onClick={async () => {
+          setError('');
+          const { error } = await getSupabase().auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: `${window.location.origin}/auth/callback` },
+          });
+          if (error) setError(error.message);
+        }}
         className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold rounded-xl px-4 py-3 mb-4 transition-colors min-h-[48px]"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
