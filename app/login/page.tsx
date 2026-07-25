@@ -10,10 +10,11 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') ?? '/member';
+  const googleError = searchParams.get('error') === 'google';
   const [form, setForm] = useState({ email: '', password: '' });
   const [honeypot, setHoneypot] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(googleError ? 'Google sign-in failed. Please try again or use email below.' : '');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -40,9 +41,8 @@ function LoginForm() {
       <h1 className="text-xl font-bold text-white mb-1">Member Sign In</h1>
       <p className="text-white/40 text-sm mb-6">Access your passes and QR code</p>
 
-      {/* TODO: Wire up real Google OAuth */}
-      <button
-        type="button"
+      <a
+        href={`/api/auth/google?next=${encodeURIComponent(next)}`}
         className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold rounded-xl px-4 py-3 mb-4 transition-colors min-h-[48px]"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -52,7 +52,7 @@ function LoginForm() {
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
         </svg>
         Continue with Google
-      </button>
+      </a>
 
       <div className="flex items-center gap-3 mb-4">
         <div className="flex-1 h-px bg-white/10" />
