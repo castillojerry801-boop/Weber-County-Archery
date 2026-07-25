@@ -121,7 +121,14 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        <p className="text-center text-white/30 text-sm mt-6">
+        <p className="text-center text-white/20 text-xs mt-6 leading-relaxed px-2">
+          By creating an account you agree to our{' '}
+          <Link href="/terms" className="text-white/40 hover:text-white/70 underline underline-offset-2">Terms of Service</Link>
+          {' '}and{' '}
+          <Link href="/privacy" className="text-white/40 hover:text-white/70 underline underline-offset-2">Privacy Policy</Link>.
+        </p>
+
+        <p className="text-center text-white/30 text-sm mt-4">
           Already a member?{' '}
           <Link href="/login" className="text-green-400 hover:text-green-300">
             Sign in
