@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getSupabase } from '@/lib/supabase-browser';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -9,43 +10,33 @@ export default function AuthCallback() {
 
   useEffect(() => {
     async function finish() {
-      // Supabase implicit flow puts the access token in the URL hash
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get('access_token');
+      const supabase = getSupabase();
+      let session = null;
 
-      if (!accessToken) {
+      // Check for existing session first — React StrictMode fires effects twice
+      // in dev, which would try to exchange the same PKCE code twice (second fails)
+      const { data: existing } = await supabase.auth.getSession();
+      if (existing.session) {
+        session = existing.session;
+      } else {
+        const code = new URLSearchParams(window.location.search).get('code');
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!error) session = data.session;
+        }
+      }
+
+      if (!session) {
         setStatus('error');
         setTimeout(() => router.replace('/login?error=google'), 2000);
         return;
       }
 
-      // Get the user's profile from Supabase using the access token
-      const userRes = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          },
-        },
-      );
-
-      if (!userRes.ok) {
-        setStatus('error');
-        setTimeout(() => router.replace('/login?error=google'), 2000);
-        return;
-      }
-
-      const userData = await userRes.json() as {
-        email: string;
-        user_metadata?: { full_name?: string; name?: string };
-      };
-
-      const email = userData.email;
-      const name = userData.user_metadata?.full_name
-        || userData.user_metadata?.name
-        || email;
+      const email = session.user.email;
+      const name =
+        session.user.user_metadata?.full_name ||
+        session.user.user_metadata?.name ||
+        email;
 
       if (!email) {
         setStatus('error');
@@ -53,7 +44,6 @@ export default function AuthCallback() {
         return;
       }
 
-      // Create the member record and set the session cookie
       const sessionRes = await fetch('/api/auth/google/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
