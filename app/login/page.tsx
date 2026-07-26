@@ -20,11 +20,21 @@ function LoginForm() {
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
-    const supabase = getSupabase();
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+    setError('');
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) {
+        setError(`Google sign-in failed: ${error.message}`);
+        setGoogleLoading(false);
+      }
+    } catch (e) {
+      setError(`Google sign-in failed: ${e instanceof Error ? e.message : String(e)}`);
+      setGoogleLoading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
